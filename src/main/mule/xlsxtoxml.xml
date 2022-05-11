@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<file:config name="File_Config" doc:name="File Config" doc:id="272222ce-b80e-48ae-bf93-6e58086af7b4" >
+		<file:connection workingDir="C:\Mulesoft\data-transformation\outputtest" />
+	</file:config>
+	<flow name="xlsxtoxmlFlow" doc:id="2a4de599-db69-418b-b684-108d66cffcb6" >
+		<file:listener doc:name="On New or Updated File" doc:id="912c7354-316c-4dcc-b0f6-e38e802d345d" directory="C:\Mulesoft\data-transformation\inputtest" autoDelete="true" moveToDirectory="C:\Mulesoft\data-transformation\backuptest" renameTo="#[&quot;backup-&quot; ++ now() as String{format: 'y M d h m s'} ++ &quot;-&quot; ++ vars.filename]" outputMimeType="application/xlsx">
+			<scheduling-strategy >
+				<fixed-frequency frequency="10" timeUnit="SECONDS"/>
+			</scheduling-strategy>
+			<file:matcher filenamePattern="*xlsx" />
+		</file:listener>
+		<set-variable value="#[attributes.fileName]" doc:name="FileName" doc:id="24ea1598-201f-4b1a-ba0f-0a70ac62b2df" variableName="filename"/>
+		<ee:transform doc:name="Transform Message" doc:id="d90879c5-64f8-4a69-9f38-63539fb44487" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+root: {
+	    row: payload.airports
+	}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<file:write doc:name='Writetoxml' doc:id="49c9365a-3850-41de-8f87-4f65b73fd728" config-ref="File_Config" path="#[&quot;file-&quot; ++ now() as String{format: 'y M d h m s'} ++ &quot;-&quot; ++ splitBy(vars.filename, '.')[0] ++ &quot;.xml&quot;]"/>
+		<logger level="INFO" doc:name="Logger" doc:id="534d908b-f42e-44b2-bbcc-f3ceb507e28a" message="the variable is #[vars.filename]"/>
+	</flow>
+</mule>
